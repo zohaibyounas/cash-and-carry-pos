@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-   baseURL: "https://cash-and-carry-pos-backend.onrender.com/api",
+  baseURL: "https://cash-and-carry-pos-backend.onrender.com/api",
   // baseURL: "http://localhost:5000/api",
   headers: {
     "Content-Type": "application/json",
@@ -19,7 +19,12 @@ api.interceptors.request.use(
     if (storeData) {
       try {
         const store = JSON.parse(storeData);
-        if (store && store._id) {
+        // Avoid attaching store header to authentication routes which don't
+        // expect it (e.g. /auth/login). Some servers may error when unexpected
+        // headers are present, so only add the header for non-auth routes.
+        const url = config.url || '';
+        const isAuthRoute = url.includes('/auth');
+        if (!isAuthRoute && store && store._id) {
           config.headers["x-store-id"] = store._id;
         }
       } catch (e) {
