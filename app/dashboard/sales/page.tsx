@@ -61,6 +61,9 @@ export default function POSPage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [remarks, setRemarks] = useState("");
   const [referenceNo, setReferenceNo] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "bank_transfer">("cash");
+  const [parkedSales, setParkedSales] = useState<any[]>([]);
+  const [showParkedModal, setShowParkedModal] = useState(false);
 
   // History State
 
@@ -97,6 +100,12 @@ export default function POSPage() {
   }, [allStoresSearch]);
 
   useEffect(() => {
+    const parked = localStorage.getItem("parkedSales");
+    if (parked) {
+      try {
+        setParkedSales(JSON.parse(parked));
+      } catch (e) { }
+    }
     fetchSales();
     fetchStores();
     fetchRetailers();
@@ -334,6 +343,58 @@ export default function POSPage() {
     barcodeRef.current?.focus();
   };
 
+  const handleHoldBill = () => {
+    if (cart.length === 0) return;
+    const newParked = [
+      ...parkedSales,
+      {
+        id: Date.now().toString(),
+        time: new Date().toISOString(),
+        cart,
+        discount,
+        selectedCustomer,
+        selectedRetailer,
+        customerName,
+        customerPhone,
+        customerAddress,
+        referenceNo,
+        remarks,
+      }
+    ];
+    setParkedSales(newParked);
+    localStorage.setItem("parkedSales", JSON.stringify(newParked));
+    
+    // Clear current
+    setCart([]);
+    setDiscount(0);
+    setPaidAmount(0);
+    setSelectedCustomer(null);
+    setSelectedRetailer(null);
+    setCustomerName("");
+    setCustomerPhone("");
+    setCustomerAddress("");
+    setRetailerSearch("");
+    setRemarks("");
+    setReferenceNo("");
+  };
+
+  const handleResumeBill = (parked: any) => {
+    setCart(parked.cart || []);
+    setDiscount(parked.discount || 0);
+    setSelectedCustomer(parked.selectedCustomer || null);
+    setSelectedRetailer(parked.selectedRetailer || null);
+    setCustomerName(parked.customerName || "");
+    setCustomerPhone(parked.customerPhone || "");
+    setCustomerAddress(parked.customerAddress || "");
+    setReferenceNo(parked.referenceNo || "");
+    setRemarks(parked.remarks || "");
+    
+    const newParked = parkedSales.filter(p => p.id !== parked.id);
+    setParkedSales(newParked);
+    localStorage.setItem("parkedSales", JSON.stringify(newParked));
+    setShowParkedModal(false);
+  };
+
   const handleVoid = async (id: string) => {
     if (
       !confirm(
@@ -385,6 +446,7 @@ export default function POSPage() {
       customerAddress: customerAddress || selectedCustomer?.address || selectedRetailer?.address || "",
       referenceNo,
       remarks,
+      paymentMethod,
       // saleDate will be auto-detected on backend if not provided
     };
 
@@ -1801,8 +1863,41 @@ export default function POSPage() {
                         </div>
                       )}
                     </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Payment Method
+                      </Label>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-100"
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value as any)}
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                      </select>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1 font-semibold text-orange-600 border-orange-200 hover:bg-orange-50 dark:border-orange-900/50 dark:text-orange-400 dark:hover:bg-orange-900/20"
+                        onClick={handleHoldBill}
+                        disabled={cart.length === 0}
+                      >
+                        Hold Bill
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1 font-semibold text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-900/50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                        onClick={() => setShowParkedModal(true)}
+                      >
+                        Resume ({parkedSales.length})
+                      </Button>
+                    </div>
+
                     <Button
-                      className="w-full gap-2 bg-blue-600 font-semibold text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+                      className="w-full gap-2 bg-blue-600 font-semibold text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 mt-2"
                       size="lg"
                       disabled={cart.length === 0 || loading}
                       onClick={handleCheckout}
@@ -2255,6 +2350,37 @@ export default function POSPage() {
         )}
 
         {/* Edit Details Modal */}
+        {/* Parked Sales Modal */}
+        {showParkedModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <Card className="w-full max-w-lg shadow-2xl border-none overflow-hidden rounded-3xl">
+              <CardHeader className="bg-slate-900 text-white p-6 flex flex-row items-center justify-between">
+                <CardTitle className="font-bold">Resume Parked Bill</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setShowParkedModal(false)} className="text-white hover:bg-slate-800">
+                  <X className="h-5 w-5" />
+                </Button>
+              </CardHeader>
+              <CardContent className="p-6 max-h-[60vh] overflow-y-auto">
+                {parkedSales.length === 0 ? (
+                  <p className="text-center text-slate-500 py-8">No parked bills.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {parkedSales.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => handleResumeBill(p)}>
+                        <div>
+                          <p className="font-bold text-sm">{p.customerName || p.selectedCustomer?.name || "Walk-in Customer"}</p>
+                          <p className="text-xs text-slate-500">{new Date(p.time).toLocaleTimeString()} - {p.cart.length} items</p>
+                        </div>
+                        <Button size="sm" variant="outline">Resume</Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {showEditModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
             <Card className="w-full max-w-lg shadow-2xl border-none overflow-hidden rounded-3xl">
