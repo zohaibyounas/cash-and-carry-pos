@@ -1,9 +1,11 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === "production" 
-    ? "https://cash-and-carry-pos-backend.onrender.com/api" 
-    : "http://localhost:5001/api"),
+  baseURL:
+    process.env.NEXT_PUBLIC_API_URL ||
+    (process.env.NODE_ENV === "production"
+      ? "https://mustafa-ss-backend.shop/api"
+      : "http://localhost:5001/api"),
   headers: {
     "Content-Type": "application/json",
   },
