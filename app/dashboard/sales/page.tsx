@@ -49,6 +49,7 @@ export default function POSPage() {
   const [scannedItem, setScannedItem] = useState<string | null>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const isProcessingRef = useRef(false); // ✅ ADD THIS
 
   // New State for Phase 3
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
