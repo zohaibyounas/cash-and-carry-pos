@@ -93,6 +93,7 @@ export default function POSPage() {
   const modeParam = searchParams.get("mode");
 
   const barcodeRef = useRef<HTMLInputElement>(null);
+  const isProcessingRef = useRef(false);
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -290,24 +291,15 @@ export default function POSPage() {
     setSearchTerm(val);
     setShowSearchDropdown(val.length > 0);
     setSelectedSearchIndex(-1);
-
-    // Auto-add if exact barcode match
-    const product = products.find((p) => p.barcode && p.barcode.trim() === val.trim());
-    if (product) {
-      addToCart(product);
-      setSearchTerm("");
-      setShowSearchDropdown(false);
-    }
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const filteredProducts = products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.barcode && p.barcode.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-
     if (e.key === "ArrowDown") {
+      const filteredProducts = products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (p.barcode && p.barcode.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
       e.preventDefault();
       setSelectedSearchIndex((prev) =>
         prev < filteredProducts.length - 1 ? prev + 1 : prev
@@ -317,18 +309,39 @@ export default function POSPage() {
       setSelectedSearchIndex((prev) => (prev > 0 ? prev - 1 : -1));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      // If a product is selected via arrow keys, add that product
-      // Otherwise, add the first product from filtered results
+      
+      // Use ref-based lock to prevent rapid fire triggers
+      if (isProcessingRef.current) return;
+      
+      const currentVal = e.currentTarget.value.trim();
+      if (!currentVal) return;
+
+      // LOCK and CLEAR DOM synchronously to prevent duplicate events from seeing the value
+      isProcessingRef.current = true;
+      e.currentTarget.value = "";
+      setSearchTerm("");
+      setShowSearchDropdown(false);
+
+      // Re-calculate filtered list based on the actual value captured from DOM
+      const filtered = products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(currentVal.toLowerCase()) ||
+          (p.barcode && p.barcode.toLowerCase().includes(currentVal.toLowerCase()))
+      );
+
       const productToAdd = selectedSearchIndex >= 0
-        ? filteredProducts[selectedSearchIndex]
-        : filteredProducts[0];
+        ? filtered[selectedSearchIndex]
+        : filtered[0];
 
       if (productToAdd) {
         addToCart(productToAdd);
-        setSearchTerm("");
-        setShowSearchDropdown(false);
         setSelectedSearchIndex(-1);
       }
+
+      // Release lock after a short delay
+      setTimeout(() => {
+        isProcessingRef.current = false;
+      }, 300);
     } else if (e.key === "Escape") {
       setShowSearchDropdown(false);
       setSelectedSearchIndex(-1);
