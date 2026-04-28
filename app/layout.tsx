@@ -24,11 +24,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Use the font CSS variable (stable across server and client) to avoid hydration mismatches
+  const bodyClass = `${geistSans?.variable ?? ""} ${
+    geistMono?.variable ?? ""
+  } antialiased`.trim();
+
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="en" suppressHydrationWarning={true}>
+      <body className={bodyClass}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
