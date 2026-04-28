@@ -85,7 +85,7 @@ export default function SelectStorePage() {
       {/* Top bar — matches login/dashboard */}
       <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 md:px-8">
         <div className="flex items-center gap-3">
-          <span className="text-2xl font-bold text-blue-600 dark:text-blue-500">Cash and Carry POS</span>
+          <span className="text-2xl font-bold text-blue-600 dark:text-blue-500">Mustafa Super Store</span>
         </div>
         <ThemeToggle />
       </header>

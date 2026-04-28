@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cash and Carry POS",
-  description: "Cash and Carry POS System",
+  title: "Mustafa Super Store",
+  description: "Welcome to Mustafa Super Store",
 };
 
 import { ThemeProvider } from "@/components/theme-provider";

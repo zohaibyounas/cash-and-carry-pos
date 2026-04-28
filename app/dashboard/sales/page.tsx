@@ -242,10 +242,10 @@ export default function POSPage() {
       if (item._id === id) {
         const newUnit = item.unitType === 'box' ? 'piece' : 'box';
         const newPrice = newUnit === 'box' ? item.salePrice : (item.pieceSalePrice || item.salePrice);
-        
+
         // Calculate needed units
         const unitsNeeded = newUnit === 'box' ? item.quantity * (item.piecesPerBox || 1) : item.quantity;
-        
+
         if (unitsNeeded > item.totalStock) {
           alert(`⚠️ Not enough stock to switch to ${newUnit}. Available: ${item.totalStock} pieces.`);
           return item;
@@ -290,7 +290,7 @@ export default function POSPage() {
     setSearchTerm(val);
     setShowSearchDropdown(val.length > 0);
     setSelectedSearchIndex(-1);
-    
+
     // Auto-add if exact barcode match
     const product = products.find((p) => p.barcode && p.barcode.trim() === val.trim());
     if (product) {
@@ -319,10 +319,10 @@ export default function POSPage() {
       e.preventDefault();
       // If a product is selected via arrow keys, add that product
       // Otherwise, add the first product from filtered results
-      const productToAdd = selectedSearchIndex >= 0 
+      const productToAdd = selectedSearchIndex >= 0
         ? filteredProducts[selectedSearchIndex]
         : filteredProducts[0];
-      
+
       if (productToAdd) {
         addToCart(productToAdd);
         setSearchTerm("");
@@ -363,7 +363,7 @@ export default function POSPage() {
     ];
     setParkedSales(newParked);
     localStorage.setItem("parkedSales", JSON.stringify(newParked));
-    
+
     // Clear current
     setCart([]);
     setDiscount(0);
@@ -388,7 +388,7 @@ export default function POSPage() {
     setCustomerAddress(parked.customerAddress || "");
     setReferenceNo(parked.referenceNo || "");
     setRemarks(parked.remarks || "");
-    
+
     const newParked = parkedSales.filter(p => p.id !== parked.id);
     setParkedSales(newParked);
     localStorage.setItem("parkedSales", JSON.stringify(newParked));
@@ -518,11 +518,11 @@ export default function POSPage() {
   ) => {
     const { isChallan, customStore } = options;
     const displayStore = customStore || sale.store;
-    
+
     const storeName = displayStore?.name || "Store";
     const location = displayStore?.location || "";
     const contact = displayStore?.contactNumber || "";
-    
+
     const WindowPrt = window.open("", "_blank", "width=900,height=900");
     if (!WindowPrt) {
       alert("Please allow pop-ups to print the invoice");
@@ -530,7 +530,7 @@ export default function POSPage() {
     }
 
     const documentTitle = "ESTIMATE / QUOTATION";
-    
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -1011,7 +1011,7 @@ export default function POSPage() {
                         <div class="strip"></div>
                         <div class="inner">
                             <div class="top">
-                                <div style="font-size: 14px; font-weight: 800; text-transform: uppercase;">Customer Information</div>
+                                <div style="font-size: 14px; font-weight: 800; text-transform: uppercase;">Mustafa Super Store</div>
                                 <div style="font-size: 12px; font-weight: 700; margin-top: 5px;">${sale.customerName || "Cash Customer"}</div>
                                 <div style="font-size: 10px;">Phone: ${sale.customerPhone || "N/A"}</div>
                                 <div style="font-size: 10px;">Address: ${sale.customerAddress || "N/A"}</div>
@@ -1035,15 +1035,15 @@ export default function POSPage() {
                                         <th>Article description</th>
                                         <th class="c" style="width: 90px">Qty</th>
                                         ${!isChallan
-                                            ? '<th class="num" style="width: 120px">Unit valuation</th><th class="num" style="width: 130px">Net amount</th>'
-                                            : ""
-                                        }
+        ? '<th class="num" style="width: 120px">Unit valuation</th><th class="num" style="width: 130px">Net amount</th>'
+        : ""
+      }
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${sale.items
-                                        ?.map(
-                                            (item: any, index: number) => `
+        ?.map(
+          (item: any, index: number) => `
                                                 <tr>
                                                     <td style="color: #94a3b8; font-weight: 700; font-size: 13px;">${String(index + 1).padStart(2, "0")}</td>
                                                     <td>
@@ -1052,13 +1052,13 @@ export default function POSPage() {
                                                     </td>
                                                     <td class="c" style="font-weight: 700; font-size: 10px; color: #000;">${item.quantity} ${item.unitType === 'piece' ? (item.product?.pieceName || 'Kg') : (item.product?.unitName || 'Bore')}</td>
                                                     ${!isChallan
-                                                        ? `<td class="num" style="color: #000; font-weight: 600; font-size: 8px;">Rs. ${item.price.toLocaleString()}</td><td class="num" style="font-weight: 800; color: #000; font-size: 10px;">Rs. ${(item.quantity * item.price).toLocaleString()}</td>`
-                                                        : ""
-                                                    }
+              ? `<td class="num" style="color: #000; font-weight: 600; font-size: 8px;">Rs. ${item.price.toLocaleString()}</td><td class="num" style="font-weight: 800; color: #000; font-size: 10px;">Rs. ${(item.quantity * item.price).toLocaleString()}</td>`
+              : ""
+            }
                                                 </tr>
                                             `,
-                                        )
-                                        .join("")}
+        )
+        .join("")}
                                 </tbody>
                             </table>
 
@@ -1068,7 +1068,7 @@ export default function POSPage() {
                                     <div class="notes-body">${sale.remarks || "No specific terms documented for this transaction. Standard warranty and exchange policy applies as per store guidelines."}</div>
                                 </div>
                                 ${!isChallan
-                                    ? `
+        ? `
                                     <div class="sum-panel">
                                         <div class="sum-row"><span>Gross subtotal</span><span style="font-weight: 600;">Rs. ${sale.subtotal.toLocaleString()}</span></div>
                                         <div class="sum-row"><span>Campaign discount</span><span style="font-weight: 600; color: #dc2626;">- Rs. ${(sale.invoiceDiscount || 0).toLocaleString()}</span></div>
@@ -1077,8 +1077,8 @@ export default function POSPage() {
                                         <div class="sum-row due"><span>Outstanding</span><span>Rs. ${Math.max(0, sale.totalAmount - sale.paidAmount).toLocaleString()}</span></div>
                                     </div>
                                     `
-                                    : ""
-                                }
+        : ""
+      }
                             </div>
 
                             <div class="sign-row">
@@ -1252,7 +1252,7 @@ export default function POSPage() {
                   onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
                   onFocus={() => searchTerm.length > 0 && setShowSearchDropdown(true)}
                 />
-                
+
                 {/* Search Dropdown */}
                 {showSearchDropdown && searchTerm && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-96 overflow-y-auto z-50">
@@ -1291,8 +1291,8 @@ export default function POSPage() {
                               product.totalStock > 10
                                 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                                 : product.totalStock > 0
-                                ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                  ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                             )}>
                               Stock: {product.hasPieces ? (
                                 `${Math.floor(product.totalStock / (product.piecesPerBox || 1))} ${product.unitName || 'Box'}${Math.floor(product.totalStock / (product.piecesPerBox || 1)) !== 0 ? 's' : ''}${product.totalStock % (product.piecesPerBox || 1) > 0 ? `, ${product.totalStock % (product.piecesPerBox || 1)} ${product.pieceName || 'Piece'}` : ''}`
@@ -1306,10 +1306,10 @@ export default function POSPage() {
                         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         (p.barcode && p.barcode.toLowerCase().includes(searchTerm.toLowerCase()))
                     ).length === 0 && (
-                      <div className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">
-                        No products found
-                      </div>
-                    )}
+                        <div className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">
+                          No products found
+                        </div>
+                      )}
                   </div>
                 )}
               </div>
@@ -1728,7 +1728,7 @@ export default function POSPage() {
                               </div>
                               <div className="flex flex-wrap items-center gap-2">
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                  Rs. {(item.unitType === 'box' ? item.salePrice : (item.pieceSalePrice || item.salePrice)).toLocaleString()} / 
+                                  Rs. {(item.unitType === 'box' ? item.salePrice : (item.pieceSalePrice || item.salePrice)).toLocaleString()} /
                                   {item.unitType === 'box' ? ` ${item.unitName || 'box'}` : ` ${item.pieceName || 'piece'}`}
                                 </p>
                                 {item.hasPieces && (
@@ -2337,8 +2337,8 @@ export default function POSPage() {
                     printFormat === "a4"
                       ? "bg-green-600 hover:bg-green-700 text-white"
                       : isChallan
-                      ? "bg-orange-600 hover:bg-orange-700 text-white"
-                      : "bg-blue-600 hover:bg-blue-700 text-white",
+                        ? "bg-orange-600 hover:bg-orange-700 text-white"
+                        : "bg-blue-600 hover:bg-blue-700 text-white",
                   )}
                 >
                   <Printer className="h-5 w-5" />

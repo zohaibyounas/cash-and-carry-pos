@@ -248,7 +248,7 @@ export default function DashboardLayout({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-500">
-                  Cash and Carry POS
+                  Mustafa Super Store
                 </h2>
               </div>
               <Button
@@ -349,7 +349,7 @@ export default function DashboardLayout({
                       const showBadge =
                         item.href === "/dashboard/notifications" &&
                         totalNotifications > 0;
-                      
+
                       return (
                         <Link
                           key={item.href}
@@ -454,7 +454,7 @@ export default function DashboardLayout({
                   )}
                 </Button>
               </Link>
-              
+
               <div className="flex items-center gap-2 border-l pl-4 dark:border-slate-800">
                 <ThemeToggle />
                 <Button
