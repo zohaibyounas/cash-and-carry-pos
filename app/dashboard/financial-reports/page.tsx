@@ -96,11 +96,11 @@ export default function FinancialReportsPage() {
       `Rs. ${(item.cashSales || 0).toLocaleString()}`,
       `Rs. ${(item.cardSales || 0).toLocaleString()}`,
       `Rs. ${(item.bankTransferSales || 0).toLocaleString()}`,
-      `Rs. ${item.sales.toLocaleString()}`,
-      `Rs. ${item.purchases.toLocaleString()}`,
-      `Rs. ${item.expenses.toLocaleString()}`,
-      `Rs. ${item.profit.toLocaleString()}`,
-      `Rs. ${item.netProfit.toLocaleString()}`,
+      `Rs. ${(item.sales || 0).toLocaleString()}`,
+      `Rs. ${(item.purchases || 0).toLocaleString()}`,
+      `Rs. ${(item.expenses || 0).toLocaleString()}`,
+      `Rs. ${(item.profit || 0).toLocaleString()}`,
+      `Rs. ${(item.netProfit || 0).toLocaleString()}`,
     ]);
 
     autoTable(doc, {
@@ -134,7 +134,7 @@ export default function FinancialReportsPage() {
   // Calculate Aggregates
   const totals = reportData.reduce(
     (acc, curr) => ({
-      sales: acc.sales + curr.sales,
+      sales: acc.sales + (curr.sales || 0),
       cash: acc.cash + (curr.cashSales || 0),
       card: acc.card + (curr.cardSales || 0),
       bankTransfer: acc.bankTransfer + (curr.bankTransferSales || 0),
@@ -361,41 +361,41 @@ export default function FinancialReportsPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="font-bold text-slate-900 dark:text-white">
-                          Rs. {item.sales.toLocaleString()}
+                          Rs. {(item.sales || 0).toLocaleString()}
                         </div>
-                        {(item.returns !== 0 || item.exchanges !== 0) && (
+                        {((item.returns || 0) !== 0 || (item.exchanges || 0) !== 0) && (
                           <div className="flex flex-col text-[10px] items-end mt-1">
-                            {item.returns !== 0 && (
+                            {(item.returns || 0) !== 0 && (
                               <span className="text-orange-600 font-medium">
-                                Ret: Rs. {item.returns.toLocaleString()}
+                                Ret: Rs. {(item.returns || 0).toLocaleString()}
                               </span>
                             )}
-                            {item.exchanges !== 0 && (
+                            {(item.exchanges || 0) !== 0 && (
                               <span className="text-blue-600 font-medium">
-                                Exc: Rs. {item.exchanges.toLocaleString()}
+                                Exc: Rs. {(item.exchanges || 0).toLocaleString()}
                               </span>
                             )}
                           </div>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right text-rose-500 font-medium">
-                        Rs. {item.purchases.toLocaleString()}
+                        Rs. {(item.purchases || 0).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right text-amber-600 font-medium">
-                        Rs. {item.expenses.toLocaleString()}
+                        Rs. {(item.expenses || 0).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400 font-bold">
-                        Rs. {item.profit.toLocaleString()}
+                        Rs. {(item.profit || 0).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right font-black">
                         <span
                           className={
-                            item.netProfit >= 0
+                            (item.netProfit || 0) >= 0
                               ? "text-emerald-600"
                               : "text-rose-600"
                           }
                         >
-                          Rs. {item.netProfit.toLocaleString()}
+                          Rs. {(item.netProfit || 0).toLocaleString()}
                         </span>
                       </td>
                     </tr>
