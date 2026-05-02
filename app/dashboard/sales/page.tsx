@@ -119,7 +119,7 @@ export default function POSPage() {
     if (parked) {
       try {
         setParkedSales(JSON.parse(parked));
-      } catch (e) {}
+      } catch (e) { }
     }
     fetchSales();
     fetchStores();
@@ -307,8 +307,7 @@ export default function POSPage() {
       item.unitType === "box" && item.hasPieces ? item.piecesPerBox || 1 : 1;
     if (q * unitsPerQuantity > item.totalStock) {
       alert(
-        `⚠️ Only ${item.totalStock} pieces in stock. That would require ${
-          q * unitsPerQuantity
+        `⚠️ Only ${item.totalStock} pieces in stock. That would require ${q * unitsPerQuantity
         } pieces.`,
       );
       return;
@@ -774,9 +773,8 @@ export default function POSPage() {
             <div class="info-left">
               <div class="info-row">
                 <span class="info-label">Customer:</span>
-                <span class="info-value" style="font-weight: bold; font-size: 14px;">${
-                  sale.customerName || "COUNTER SALE"
-                }</span>
+                <span class="info-value" style="font-weight: bold; font-size: 14px;">${sale.customerName || "COUNTER SALE"
+      }</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Phone:</span>
@@ -790,15 +788,14 @@ export default function POSPage() {
             <div class="info-right" style="text-align: right;">
               <div class="info-row" style="justify-content: flex-end;">
                 <span class="info-label">Ref No:</span>
-                <span class="info-value" style="text-align: right; min-width: 80px; font-weight: bold;">${
-                  sale.referenceNo || "—"
-                }</span>
+                <span class="info-value" style="text-align: right; min-width: 80px; font-weight: bold;">${sale.referenceNo || "—"
+      }</span>
               </div>
               <div class="info-row" style="justify-content: flex-end;">
                 <span class="info-label">Date:</span>
                 <span class="info-value" style="text-align: right; min-width: 80px;">${new Date(
-                  sale.createdAt,
-                ).toLocaleString()}</span>
+        sale.createdAt,
+      ).toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -811,61 +808,54 @@ export default function POSPage() {
                 <th style="width: 50px;">Code</th>
                 <th>Products</th>
                 <th class="text-center" style="width: 70px;">Quantity</th>
-                ${
-                  !isChallan
-                    ? '<th class="text-right" style="width: 80px;">Rate</th>'
-                    : ""
-                }
-                ${
-                  !isChallan
-                    ? '<th class="text-right" style="width: 60px;">Disc</th>'
-                    : ""
-                }
-                ${
-                  !isChallan
-                    ? '<th class="text-right" style="width: 100px;">Net Amount</th>'
-                    : ""
-                }
+                ${!isChallan
+        ? '<th class="text-right" style="width: 80px;">Rate</th>'
+        : ""
+      }
+                ${!isChallan
+        ? '<th class="text-right" style="width: 60px;">Disc</th>'
+        : ""
+      }
+                ${!isChallan
+        ? '<th class="text-right" style="width: 100px;">Net Amount</th>'
+        : ""
+      }
               </tr>
             </thead>
             <tbody>
               ${sale.items
-                ?.map(
-                  (item: any, idx: number) => `
+        ?.map(
+          (item: any, idx: number) => `
                 <tr>
                   <td>${item.product?.barcode || idx + 1}</td>
                   <td>${item.product?.name || "Item"}</td>
                   <td class="text-center">${item.quantity} ${item.unitType === "piece" ? item.product?.pieceName || "Piece" : item.product?.unitName || "Box"}</td>
-                  ${
-                    !isChallan
-                      ? `<td class="text-right">${item.price.toLocaleString()}</td>`
-                      : ""
-                  }
+                  ${!isChallan
+              ? `<td class="text-right">${item.price.toLocaleString()}</td>`
+              : ""
+            }
                   ${!isChallan ? `<td class="text-right">0.00</td>` : ""}
-                  ${
-                    !isChallan
-                      ? `<td class="text-right">${(
-                          item.quantity * item.price
-                        ).toLocaleString()}</td>`
-                      : ""
-                  }
+                  ${!isChallan
+              ? `<td class="text-right">${(
+                item.quantity * item.price
+              ).toLocaleString()}</td>`
+              : ""
+            }
                 </tr>
               `,
-                )
-                .join("")}
+        )
+        .join("")}
             </tbody>
           </table>
           
-          ${
-            !isChallan
-              ? `
+          ${!isChallan
+        ? `
           <div class="summary-section">
             <table class="summary-table">
               <tr>
                 <td style="width: 60px;"><strong>Total</strong></td>
-                <td style="width: 50px; text-align: center;">${
-                  sale.items?.length || 0
-                }</td>
+                <td style="width: 50px; text-align: center;">${sale.items?.length || 0
+        }</td>
                 <td style="flex: 1;"></td>
                 <td class="summary-label">Current Bill:</td>
                 <td class="summary-value">${sale.totalAmount.toLocaleString()}</td>
@@ -889,20 +879,20 @@ export default function POSPage() {
                 <td colspan="3"></td>
                 <td class="summary-label">Net Balance:</td>
                 <td class="summary-value">${(
-                  sale.totalAmount - sale.paidAmount
-                ).toLocaleString()}</td>
+          sale.totalAmount - sale.paidAmount
+        ).toLocaleString()}</td>
               </tr>
             </table>
           </div>
           `
-              : `
+        : `
           <div class="summary-section" style="margin-top: 20px; padding: 15px; border-top: 1px dashed #000;">
             <p style="font-size: 12px; text-align: center; color: #666; font-style: italic;">
               This is a quotation document. Final pricing will be provided upon confirmation.
             </p>
           </div>
           `
-          }
+      }
           <div style="text-align:center;font-size:10px;margin-top:8px;color:#444;">Powered by iwiz solution | Contact: 03145372506</div>
           <div style="height:6mm"></div>
         </div>
@@ -1245,13 +1235,12 @@ export default function POSPage() {
                                 <div style="font-size: 11px; margin-top: 4px;">Phone: ${resolvedContact}</div>
                                 <div style="font-size: 11px;">Address: Street 10, Block C, Sector 4, APHS Rawalpindi</div>
                                 <div style="margin-top: 8px;">
-                                    <span style="font-size: 11px; font-weight: 800; background: #000; color: #fff; padding: 2px 6px; display: inline-block;"> ${
-                                      sale.referenceNo || "—"
-                                    }</span>
+                                    <span style="font-size: 11px; font-weight: 800; background: #000; color: #fff; padding: 2px 6px; display: inline-block;"> ${sale.referenceNo || "—"
+      }</span>
                                 </div>
                                 <div style="font-size: 9px; margin-top: 4px;">Date: ${new Date(
-                                  sale.createdAt,
-                                ).toLocaleString()}</div>
+        sale.createdAt,
+      ).toLocaleString()}</div>
                             </div>
 
                             <!-- Remarks removed as requested -->
@@ -1262,72 +1251,65 @@ export default function POSPage() {
                                         <th style="width: 50px">#</th>
                                         <th>Article description</th>
                                         <th class="c" style="width: 90px">Qty</th>
-                                        ${
-                                          !isChallan
-                                            ? '<th class="num" style="width: 120px">Unit valuation</th><th class="num" style="width: 130px">Net amount</th>'
-                                            : ""
-                                        }
+                                        ${!isChallan
+        ? '<th class="num" style="width: 120px">Unit valuation</th><th class="num" style="width: 130px">Net amount</th>'
+        : ""
+      }
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${sale.items
-                                      ?.map(
-                                        (item: any, index: number) => `
+        ?.map(
+          (item: any, index: number) => `
                                                 <tr>
                                                     <td style="color: #94a3b8; font-weight: 700; font-size: 13px;">${String(
-                                                      index + 1,
-                                                    ).padStart(2, "0")}</td>
+            index + 1,
+          ).padStart(2, "0")}</td>
                                                     <td>
-                                                        <div class="prod-name">${
-                                                          item.product?.name ||
-                                                          "Item"
-                                                        }</div>
-                                                        <div class="prod-code">Serial/Code: ${
-                                                          item.product
-                                                            ?.barcode || "—"
-                                                        }</div>
+                                                        <div class="prod-name">${item.product?.name ||
+            "Item"
+            }</div>
+                                                        <div class="prod-code">Serial/Code: ${item.product
+              ?.barcode || "—"
+            }</div>
                                                     </td>
-                                                    <td class="c" style="font-weight: 700; font-size: 10px; color: #000;">${
-                                                      item.quantity
-                                                    } ${
-                                          item.unitType === "piece"
-                                            ? item.product?.pieceName || "Piece"
-                                            : item.product?.unitName || "Box"
-                                        }</td>
-                                                    ${
-                                                      !isChallan
-                                                        ? `<td class="num" style="color: #000; font-weight: 600; font-size: 8px;">Rs. ${item.price.toLocaleString()}</td><td class="num" style="font-weight: 800; color: #000; font-size: 10px;">Rs. ${(
-                                                            item.quantity *
-                                                            item.price
-                                                          ).toLocaleString()}</td>`
-                                                        : ""
-                                                    }
+                                                    <td class="c" style="font-weight: 700; font-size: 10px; color: #000;">${item.quantity
+            } ${item.unitType === "piece"
+              ? item.product?.pieceName || "Piece"
+              : item.product?.unitName || "Box"
+            }</td>
+                                                    ${!isChallan
+              ? `<td class="num" style="color: #000; font-weight: 600; font-size: 8px;">Rs. ${item.price.toLocaleString()}</td><td class="num" style="font-weight: 800; color: #000; font-size: 10px;">Rs. ${(
+                item.quantity *
+                item.price
+              ).toLocaleString()}</td>`
+              : ""
+            }
                                                 </tr>
                                             `,
-                                      )
-                                      .join("")}
+        )
+        .join("")}
                                 </tbody>
                             </table>
 
                             <div class="row-wrap">
-                              ${
-                                !isChallan
-                                  ? `
+                              ${!isChallan
+        ? `
                                 <div class="sum-panel">
                                   <div class="sum-row"><span>Gross subtotal</span><span style="font-weight: 600;">Rs. ${sale.subtotal.toLocaleString()}</span></div>
                                   <div class="sum-row"><span>Campaign discount</span><span style="font-weight: 600; color: #dc2626;">- Rs. ${(
-                                    sale.invoiceDiscount || 0
-                                  ).toLocaleString()}</span></div>
+          sale.invoiceDiscount || 0
+        ).toLocaleString()}</span></div>
                                   <div class="sum-row grand"><span>Total</span><span>Rs. ${sale.totalAmount.toLocaleString()}</span></div>
                                   <div class="sum-row ok"><span>Received PKR</span><span>Rs. ${sale.paidAmount.toLocaleString()}</span></div>
                                   <div class="sum-row due"><span>Outstanding</span><span>Rs. ${Math.max(
-                                    0,
-                                    sale.totalAmount - sale.paidAmount,
-                                  ).toLocaleString()}</span></div>
+          0,
+          sale.totalAmount - sale.paidAmount,
+        ).toLocaleString()}</span></div>
                                 </div>
                                 `
-                                  : ""
-                              }
+        : ""
+      }
                             </div>
                             <div style="text-align:center;font-size:10px;margin-top:6px;color:#444;">Powered by iwiz solution | Contact: 03145372506</div>
                             <div style="height:30mm;"></div>
@@ -1529,7 +1511,7 @@ export default function POSPage() {
                         className={cn(
                           "w-full px-4 py-3 text-left hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-700 last:border-0",
                           selectedSearchIndex === index &&
-                            "bg-blue-50 dark:bg-slate-700",
+                          "bg-blue-50 dark:bg-slate-700",
                         )}
                       >
                         <div className="flex-1 min-w-0">
@@ -1552,32 +1534,29 @@ export default function POSPage() {
                               product.totalStock > 10
                                 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                                 : product.totalStock > 0
-                                ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                                  ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
                             )}
                           >
                             Stock:{" "}
                             {product.hasPieces
                               ? `${Math.floor(
-                                  product.totalStock /
-                                    (product.piecesPerBox || 1),
-                                )} ${product.unitName || "Box"}${
-                                  Math.floor(
-                                    product.totalStock /
-                                      (product.piecesPerBox || 1),
-                                  ) !== 0
-                                    ? "s"
-                                    : ""
-                                }${
-                                  product.totalStock %
-                                    (product.piecesPerBox || 1) >
-                                  0
-                                    ? `, ${
-                                        product.totalStock %
-                                        (product.piecesPerBox || 1)
-                                      } ${product.pieceName || "Piece"}`
-                                    : ""
-                                }`
+                                product.totalStock /
+                                (product.piecesPerBox || 1),
+                              )} ${product.unitName || "Box"}${Math.floor(
+                                product.totalStock /
+                                (product.piecesPerBox || 1),
+                              ) !== 0
+                                ? "s"
+                                : ""
+                              }${product.totalStock %
+                                (product.piecesPerBox || 1) >
+                                0
+                                ? `, ${product.totalStock %
+                                (product.piecesPerBox || 1)
+                                } ${product.pieceName || "Piece"}`
+                                : ""
+                              }`
                               : product.totalStock}
                           </div>
                         </div>
@@ -1591,10 +1570,10 @@ export default function POSPage() {
                           .toLowerCase()
                           .includes(searchTerm.toLowerCase())),
                   ).length === 0 && (
-                    <div className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">
-                      No products found
-                    </div>
-                  )}
+                      <div className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">
+                        No products found
+                      </div>
+                    )}
                 </div>
               )}
             </div>
@@ -1624,7 +1603,7 @@ export default function POSPage() {
                       className={cn(
                         "overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-2 relative h-full flex flex-col",
                         p.totalStock <= 0 &&
-                          "opacity-60 grayscale cursor-not-allowed hover:scale-100",
+                        "opacity-60 grayscale cursor-not-allowed hover:scale-100",
                       )}
                     >
                       {p.totalStock <= 0 && (
@@ -1661,20 +1640,17 @@ export default function POSPage() {
                           <span className="shrink-0 rounded-full bg-blue-500 px-2.5 py-0.5 text-xs font-bold text-white min-w-[1.75rem] text-center">
                             {p.hasPieces
                               ? `${Math.floor(
-                                  p.totalStock / (p.piecesPerBox || 1),
-                                )} ${p.unitName || "Box"}${
-                                  Math.floor(
-                                    p.totalStock / (p.piecesPerBox || 1),
-                                  ) !== 0
-                                    ? "s"
-                                    : ""
-                                }${
-                                  p.totalStock % (p.piecesPerBox || 1) > 0
-                                    ? ` & ${
-                                        p.totalStock % (p.piecesPerBox || 1)
-                                      } ${p.pieceName || "Piece"}`
-                                    : ""
-                                }`
+                                p.totalStock / (p.piecesPerBox || 1),
+                              )} ${p.unitName || "Box"}${Math.floor(
+                                p.totalStock / (p.piecesPerBox || 1),
+                              ) !== 0
+                                ? "s"
+                                : ""
+                              }${p.totalStock % (p.piecesPerBox || 1) > 0
+                                ? ` & ${p.totalStock % (p.piecesPerBox || 1)
+                                } ${p.pieceName || "Piece"}`
+                                : ""
+                              }`
                               : p.totalStock}
                           </span>
                         </div>
@@ -1937,59 +1913,59 @@ export default function POSPage() {
                     customerName ||
                     customerPhone ||
                     customerAddress) && (
-                    <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
-                      <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        {selectedRetailer
-                          ? "Retailer Details Preview"
-                          : "Customer Details Preview"}
-                      </Label>
-                      <div className="space-y-1 text-sm">
-                        {(customerName ||
-                          selectedCustomer?.name ||
-                          selectedRetailer?.name) && (
-                          <p className="font-semibold text-slate-900 dark:text-white">
-                            {customerName ||
-                              selectedCustomer?.name ||
-                              selectedRetailer?.name}
-                          </p>
-                        )}
-                        {(customerPhone ||
-                          selectedCustomer?.phone ||
-                          selectedRetailer?.contact) && (
-                          <p className="text-slate-600 dark:text-slate-400">
-                            📞{" "}
-                            {customerPhone ||
-                              selectedCustomer?.phone ||
-                              selectedRetailer?.contact}
-                          </p>
-                        )}
-                        {(customerAddress ||
-                          selectedCustomer?.address ||
-                          selectedRetailer?.address) && (
-                          <p className="text-slate-600 dark:text-slate-400">
-                            📍{" "}
-                            {customerAddress ||
-                              selectedCustomer?.address ||
-                              selectedRetailer?.address}
-                          </p>
-                        )}
-                        {selectedRetailer && (
-                          <>
-                            {selectedRetailer.bankName && (
-                              <p className="text-slate-600 dark:text-slate-400">
-                                🏦 Bank: {selectedRetailer.bankName}
+                      <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          {selectedRetailer
+                            ? "Retailer Details Preview"
+                            : "Customer Details Preview"}
+                        </Label>
+                        <div className="space-y-1 text-sm">
+                          {(customerName ||
+                            selectedCustomer?.name ||
+                            selectedRetailer?.name) && (
+                              <p className="font-semibold text-slate-900 dark:text-white">
+                                {customerName ||
+                                  selectedCustomer?.name ||
+                                  selectedRetailer?.name}
                               </p>
                             )}
-                            {selectedRetailer.bankAccount && (
+                          {(customerPhone ||
+                            selectedCustomer?.phone ||
+                            selectedRetailer?.contact) && (
                               <p className="text-slate-600 dark:text-slate-400">
-                                💳 Account: {selectedRetailer.bankAccount}
+                                📞{" "}
+                                {customerPhone ||
+                                  selectedCustomer?.phone ||
+                                  selectedRetailer?.contact}
                               </p>
                             )}
-                          </>
-                        )}
+                          {(customerAddress ||
+                            selectedCustomer?.address ||
+                            selectedRetailer?.address) && (
+                              <p className="text-slate-600 dark:text-slate-400">
+                                📍{" "}
+                                {customerAddress ||
+                                  selectedCustomer?.address ||
+                                  selectedRetailer?.address}
+                              </p>
+                            )}
+                          {selectedRetailer && (
+                            <>
+                              {selectedRetailer.bankName && (
+                                <p className="text-slate-600 dark:text-slate-400">
+                                  🏦 Bank: {selectedRetailer.bankName}
+                                </p>
+                              )}
+                              {selectedRetailer.bankAccount && (
+                                <p className="text-slate-600 dark:text-slate-400">
+                                  💳 Account: {selectedRetailer.bankAccount}
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </CardContent>
               </Card>
 
@@ -2024,7 +2000,7 @@ export default function POSPage() {
                           className={cn(
                             "flex gap-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800/50 transition-all duration-300",
                             scannedItem === item._id &&
-                              "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-[1.02]",
+                            "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-[1.02]",
                           )}
                         >
                           <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -2340,93 +2316,93 @@ export default function POSPage() {
                             return false;
                           })
                           .map((sale) => (
-                          <tr
-                            key={sale._id}
-                            className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                          >
-                            <td className="px-4 py-3 font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
-                              {sale.invoiceId}
-                              {sale.referenceNo && (
-                                <span className="block text-[10px] font-normal text-slate-400">
-                                  Ref: {sale.referenceNo}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
-                              {formatDateTimeSafe(sale.createdAt)}
-                            </td>
-                            <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
-                              {sale.customerName ||
-                                sale.customer?.name ||
-                                "Walk-in"}
-                            </td>
-                            <td 
-                              className="px-4 py-3 text-xs text-slate-500 max-w-[200px] truncate"
-                              title={sale.items?.map((item: any) => item.product?.name).join(", ")}
+                            <tr
+                              key={sale._id}
+                              className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
                             >
-                              {sale.items?.map((item: any) => item.product?.name).join(", ") || "—"}
-                            </td>
-                            <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
-                              Rs. {sale.totalAmount.toLocaleString()}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={cn(
-                                  "rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase",
-                                  sale.paymentStatus === "paid"
-                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                    : sale.paymentStatus === "partial"
-                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                              <td className="px-4 py-3 font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
+                                {sale.invoiceId}
+                                {sale.referenceNo && (
+                                  <span className="block text-[10px] font-normal text-slate-400">
+                                    Ref: {sale.referenceNo}
+                                  </span>
                                 )}
+                              </td>
+                              <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
+                                {formatDateTimeSafe(sale.createdAt)}
+                              </td>
+                              <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
+                                {sale.customerName ||
+                                  sale.customer?.name ||
+                                  "Walk-in"}
+                              </td>
+                              <td
+                                className="px-4 py-3 text-xs text-slate-500 max-w-[200px] truncate"
+                                title={sale.items?.map((item: any) => item.product?.name).join(", ")}
                               >
-                                {sale.paymentStatus}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  title="Return / Exchange"
-                                  className="h-9 w-9 text-orange-500 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20 dark:hover:text-orange-400"
-                                  onClick={() => handleOpenReturn(sale)}
+                                {sale.items?.map((item: any) => item.product?.name).join(", ") || "—"}
+                              </td>
+                              <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
+                                Rs. {sale.totalAmount.toLocaleString()}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className={cn(
+                                    "rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase",
+                                    sale.paymentStatus === "paid"
+                                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                      : sale.paymentStatus === "partial"
+                                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                                  )}
                                 >
-                                  <RotateCcw className="h-4 w-4" />
-                                </Button>
-                                {userRole === "admin" && (
+                                  {sale.paymentStatus}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <div className="flex justify-end gap-2">
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    title="Edit Details"
-                                    className="h-9 w-9 text-slate-500 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
-                                    onClick={() => handleEditMetadata(sale)}
+                                    title="Return / Exchange"
+                                    className="h-9 w-9 text-orange-500 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20 dark:hover:text-orange-400"
+                                    onClick={() => handleOpenReturn(sale)}
                                   >
-                                    <Pencil className="h-4 w-4" />
+                                    <RotateCcw className="h-4 w-4" />
                                   </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-9 w-9 text-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
-                                  onClick={() => handlePrint(sale)}
-                                >
-                                  <Printer className="h-4 w-4" />
-                                </Button>
-                                {userRole === "admin" && (
+                                  {userRole === "admin" && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      title="Edit Details"
+                                      className="h-9 w-9 text-slate-500 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                                      onClick={() => handleEditMetadata(sale)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-9 w-9 text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                                    onClick={() => handleVoid(sale._id)}
+                                    className="h-9 w-9 text-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                                    onClick={() => handlePrint(sale)}
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Printer className="h-4 w-4" />
                                   </Button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))
+                                  {userRole === "admin" && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-9 w-9 text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                                      onClick={() => handleVoid(sale._id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
                       )}
                     </tbody>
                   </table>
@@ -2525,7 +2501,7 @@ export default function POSPage() {
                                       className="h-8 w-8 text-red-400 hover:bg-red-50 hover:text-red-600"
                                       onClick={() => handleVoid(sale._id)}
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      {/* <Trash2 className="h-4 w-4" /> */}
                                     </Button>
                                   )}
                                 </div>
@@ -2837,16 +2813,16 @@ export default function POSPage() {
                     printFormat === "a4"
                       ? "bg-green-600 hover:bg-green-700 text-white"
                       : isChallan
-                      ? "bg-orange-600 hover:bg-orange-700 text-white"
-                      : "bg-blue-600 hover:bg-blue-700 text-white",
+                        ? "bg-orange-600 hover:bg-orange-700 text-white"
+                        : "bg-blue-600 hover:bg-blue-700 text-white",
                   )}
                 >
                   <Printer className="h-5 w-5" />
                   {printFormat === "a4"
                     ? "Print A4"
                     : isChallan
-                    ? "Print Challan"
-                    : "Print Invoice"}
+                      ? "Print Challan"
+                      : "Print Invoice"}
                 </Button>
               </CardFooter>
             </Card>
@@ -3107,7 +3083,7 @@ export default function POSPage() {
                     <RefreshCcw className="h-4 w-4" />
                     Exchange / New Items
                   </h3>
-                  
+
                   {/* Improved Product Search for Exchange */}
                   <div className="relative mb-4">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -3119,8 +3095,8 @@ export default function POSPage() {
                         const term = e.target.value;
                         setExchangeSearch(term);
                         if (term.length > 1) {
-                          const filtered = products.filter(p => 
-                            p.name.toLowerCase().includes(term.toLowerCase()) || 
+                          const filtered = products.filter(p =>
+                            p.name.toLowerCase().includes(term.toLowerCase()) ||
                             (p.barcode && p.barcode.toLowerCase().includes(term.toLowerCase()))
                           ).slice(0, 5);
                           setExchangeSearchResults(filtered);
@@ -3205,13 +3181,13 @@ export default function POSPage() {
                       <span className="text-sm font-black uppercase tracking-tighter">Net Balance</span>
                       <span className={cn(
                         "text-lg font-black",
-                        (exchangeItems.reduce((sum, item) => sum + item.quantity * item.price, 0) - returnItems.reduce((sum, item) => sum + item.returnQty * item.price, 0)) >= 0 
-                        ? "text-blue-600" : "text-orange-600"
+                        (exchangeItems.reduce((sum, item) => sum + item.quantity * item.price, 0) - returnItems.reduce((sum, item) => sum + item.returnQty * item.price, 0)) >= 0
+                          ? "text-blue-600" : "text-orange-600"
                       )}>
                         Rs. {(exchangeItems.reduce((sum, item) => sum + item.quantity * item.price, 0) - returnItems.reduce((sum, item) => sum + item.returnQty * item.price, 0)).toLocaleString()}
                       </span>
                     </div>
-                    <Button 
+                    <Button
                       className="w-full h-12 mt-4 bg-orange-600 hover:bg-orange-700 text-white font-black uppercase tracking-widest rounded-xl shadow-lg"
                       onClick={submitReturn}
                       disabled={returnProcessing}
