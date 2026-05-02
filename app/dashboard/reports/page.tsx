@@ -29,6 +29,8 @@ export default function ReportsPage() {
     const [loading, setLoading] = useState(false);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [salesSearchTerm, setSalesSearchTerm] = useState('');
+    const [stockSearchTerm, setStockSearchTerm] = useState('');
 
     useEffect(() => {
         fetchReportData();
@@ -161,9 +163,20 @@ export default function ReportsPage() {
                 {/* Sales Tab */}
                 <TabsContent value="sales" className="mt-0">
                     <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-900">
-                        <CardHeader>
-                            <CardTitle className="text-slate-900 dark:text-white">Historical Sales Data</CardTitle>
-                            <CardDescription className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date, invoice and revenue</CardDescription>
+                        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div className="space-y-1">
+                                <CardTitle className="text-slate-900 dark:text-white">Historical Sales Data</CardTitle>
+                                <CardDescription className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date, invoice and revenue</CardDescription>
+                            </div>
+                            <div className="relative w-full md:w-72 print:hidden">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                                <Input
+                                    placeholder="Search invoice or salesman..."
+                                    value={salesSearchTerm}
+                                    onChange={(e) => setSalesSearchTerm(e.target.value)}
+                                    className="pl-9 dark:bg-slate-800/50"
+                                />
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="overflow-x-auto">
@@ -177,10 +190,18 @@ export default function ReportsPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {salesReport.length === 0 ? (
-                                            <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400 italic">No sales found in this period.</td></tr>
+                                        {salesReport.filter(sale => 
+                                            (sale.invoiceId || '').toLowerCase().includes(salesSearchTerm.toLowerCase()) ||
+                                            (sale.salesman?.name || '').toLowerCase().includes(salesSearchTerm.toLowerCase()) ||
+                                            (sale.totalAmount || 0).toString().includes(salesSearchTerm)
+                                        ).length === 0 ? (
+                                            <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400 italic">No sales found matching your search.</td></tr>
                                         ) : (
-                                            salesReport.map(sale => (
+                                            salesReport.filter(sale => 
+                                                (sale.invoiceId || '').toLowerCase().includes(salesSearchTerm.toLowerCase()) ||
+                                                (sale.salesman?.name || '').toLowerCase().includes(salesSearchTerm.toLowerCase()) ||
+                                                (sale.totalAmount || 0).toString().includes(salesSearchTerm)
+                                            ).map(sale => (
                                                 <tr key={sale._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{formatDateTimeSafe(sale.createdAt)}</td>
                                                     <td className="px-4 py-3 font-mono text-blue-600 dark:text-blue-400 uppercase">{sale.invoiceId}</td>
@@ -237,10 +258,56 @@ export default function ReportsPage() {
 
                 {/* Stock Status Tab */}
                 <TabsContent value="stock" className="mt-0">
+                    {/* Summary Card for Stock Status */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 print:mb-4">
+                        <Card className="border-blue-100 bg-blue-50/30 dark:border-blue-900/50 dark:bg-blue-900/10">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Total Inventory Asset Value</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                                    Rs. {stockReport.reduce((sum, p) => sum + (p.totalStock * (p.hasPieces ? (Number(p.pieceCostPrice) || (Number(p.costPrice) / (Number(p.piecesPerBox) || 1))) : Number(p.costPrice))), 0).toLocaleString()}
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-1 uppercase font-medium">Total value of all items in stock (at cost)</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-900">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total SKU Count</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-slate-900 dark:text-white">{stockReport.length}</div>
+                                <p className="text-[10px] text-slate-500 mt-1 uppercase font-medium">Unique products in inventory</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-amber-100 bg-amber-50/30 dark:border-amber-900/50 dark:bg-amber-900/10">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Low Stock Items</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                                    {stockReport.filter(p => p.totalStock <= (p.criticalThreshold || 10)).length}
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-1 uppercase font-medium">Items near or below threshold</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
                     <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-900">
-                        <CardHeader>
-                            <CardTitle className="text-slate-900 dark:text-white">Inventory Valuation & Stock Levels</CardTitle>
-                            <CardDescription className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Stock and asset value</CardDescription>
+                        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div className="space-y-1">
+                                <CardTitle className="text-slate-900 dark:text-white">Inventory Valuation & Stock Levels</CardTitle>
+                                <CardDescription className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Detailed breakdown by product</CardDescription>
+                            </div>
+                            <div className="relative w-full md:w-72 print:hidden">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                                <Input
+                                    placeholder="Search product name or category..."
+                                    value={stockSearchTerm}
+                                    onChange={(e) => setStockSearchTerm(e.target.value)}
+                                    className="pl-9 dark:bg-slate-800/50"
+                                />
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="overflow-x-auto">
@@ -254,10 +321,16 @@ export default function ReportsPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {stockReport.length === 0 ? (
-                                            <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400 italic">No inventory products found.</td></tr>
+                                        {stockReport.filter(p => 
+                                            (p.name || '').toLowerCase().includes(stockSearchTerm.toLowerCase()) ||
+                                            (p.category || '').toLowerCase().includes(stockSearchTerm.toLowerCase())
+                                        ).length === 0 ? (
+                                            <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400 italic">No inventory products found matching your search.</td></tr>
                                         ) : (
-                                            stockReport.map(product => (
+                                            stockReport.filter(p => 
+                                                (p.name || '').toLowerCase().includes(stockSearchTerm.toLowerCase()) ||
+                                                (p.category || '').toLowerCase().includes(stockSearchTerm.toLowerCase())
+                                            ).map(product => (
                                                 <tr key={product._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                                     <td className="px-4 py-3">
                                                         <div className="font-bold uppercase text-slate-900 dark:text-white">{product.name}</div>

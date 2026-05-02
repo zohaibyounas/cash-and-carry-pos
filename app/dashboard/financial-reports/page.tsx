@@ -49,6 +49,7 @@ export default function FinancialReportsPage() {
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchReport = async () => {
     setLoading(true);
@@ -154,6 +155,13 @@ export default function FinancialReportsPage() {
       netProfit: 0,
     },
   );
+
+  const filteredData = reportData.filter((item) => {
+    const products = (item.productNames || []).join(", ").toLowerCase();
+    const date = formatDateTimeSafe(item.date).toLowerCase();
+    const search = searchTerm.toLowerCase();
+    return products.includes(search) || date.includes(search);
+  });
 
   return (
     <div className="min-h-screen space-y-8 bg-slate-50 p-6 dark:bg-slate-950 md:p-8">
@@ -305,9 +313,20 @@ export default function FinancialReportsPage() {
 
       {/* Main Table */}
       <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-900">
-        <CardHeader>
-          <CardTitle>Daily Transaction Ledger</CardTitle>
-          <CardDescription>Breakdown of performance by date</CardDescription>
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1">
+            <CardTitle>Daily Transaction Ledger</CardTitle>
+            <CardDescription>Breakdown of performance by date</CardDescription>
+          </div>
+          <div className="relative w-full md:w-72 print:hidden">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search products or dates..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 dark:bg-slate-800/50"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -329,17 +348,17 @@ export default function FinancialReportsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {reportData.length === 0 ? (
+                {filteredData.length === 0 ? (
                   <tr>
                     <td
                       colSpan={10}
                       className="px-4 py-8 text-center text-slate-400"
                     >
-                      No records found for the selected range.
+                      {searchTerm ? "No records match your search." : "No records found for the selected range."}
                     </td>
                   </tr>
                 ) : (
-                  reportData.map((item, index) => (
+                  filteredData.map((item, index) => (
                     <tr
                       key={item._id || index}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors tabular-nums"
