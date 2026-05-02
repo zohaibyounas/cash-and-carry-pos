@@ -29,9 +29,16 @@ import {
   Settings2,
   Pencil,
   Building2,
+  RotateCcw,
+  RefreshCcw,
+  ArrowRight,
+  Plus,
+  Minus,
+  Check,
 } from "lucide-react";
 import api from "@/lib/api";
 import { cn, formatDateSafe, formatDateTimeSafe } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function POSPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,6 +56,7 @@ export default function POSPage() {
   const [scannedItem, setScannedItem] = useState<string | null>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [historySearchTerm, setHistorySearchTerm] = useState("");
   const isProcessingRef = useRef(false); // ✅ ADD THIS
 
   // New State for Phase 3
@@ -62,6 +70,13 @@ export default function POSPage() {
   const [customerAddress, setCustomerAddress] = useState("");
   const [remarks, setRemarks] = useState("");
   const [referenceNo, setReferenceNo] = useState("");
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [selectedReturnSale, setSelectedReturnSale] = useState<any>(null);
+  const [returnItems, setReturnItems] = useState<any[]>([]); // items from original sale being returned
+  const [exchangeItems, setExchangeItems] = useState<any[]>([]); // new items being added
+  const [returnProcessing, setReturnProcessing] = useState(false);
+  const [exchangeSearch, setExchangeSearch] = useState("");
+  const [exchangeSearchResults, setExchangeSearchResults] = useState<any[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<
     "cash" | "card" | "bank_transfer"
   >("cash");
@@ -506,6 +521,7 @@ export default function POSPage() {
       setCart([]);
       setDiscount(0);
       setPaidAmount(0);
+      toast.success("Sale completed successfully!");
       // Reset new fields
       setSelectedCustomer(null);
       setSelectedRetailer(null);
@@ -523,7 +539,7 @@ export default function POSPage() {
       const errorMessage =
         error.response?.data?.message ||
         "Failed to create sale. Please check console for details.";
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -563,6 +579,123 @@ export default function POSPage() {
     setShowPrintModal(true);
   };
 
+  const handleOpenReturn = (sale: any) => {
+    setSelectedReturnSale(sale);
+    // Initialize return items with 0 quantity
+    const items = sale.items.map((item: any) => ({
+      ...item,
+      returnQty: 0,
+    }));
+    setReturnItems(items);
+    setExchangeItems([]);
+    setExchangeSearch("");
+    setExchangeSearchResults([]);
+    setShowReturnModal(true);
+  };
+
+  const updateReturnQty = (index: number, qty: number) => {
+    const updated = [...returnItems];
+    const item = updated[index];
+    const maxQty = item.quantity;
+    updated[index].returnQty = Math.min(Math.max(0, qty), maxQty);
+    setReturnItems(updated);
+  };
+
+  const addToExchange = (product: any) => {
+    const existing = exchangeItems.find(
+      (item) => item.product._id === product._id && item.unitType === "piece"
+    );
+    if (existing) {
+      const updated = exchangeItems.map((item) =>
+        item.product._id === product._id && item.unitType === "piece"
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      );
+      setExchangeItems(updated);
+    } else {
+      setExchangeItems([
+        ...exchangeItems,
+        {
+          product: product,
+          quantity: 1,
+          unitType: "piece",
+          price: product.pieceSalePrice || product.salePrice,
+          costPrice: product.pieceCostPrice || product.costPrice,
+        },
+      ]);
+    }
+  };
+
+  const updateExchangeQty = (index: number, qty: number) => {
+    const updated = [...exchangeItems];
+    updated[index].quantity = Math.max(0, qty);
+    setExchangeItems(updated);
+  };
+
+  const removeExchangeItem = (index: number) => {
+    setExchangeItems(exchangeItems.filter((_, i) => i !== index));
+  };
+
+  const submitReturn = async () => {
+    const itemsToReturn = returnItems
+      .filter((item) => item.returnQty > 0)
+      .map((item) => ({
+        product: item.product._id || item.product,
+        quantity: item.returnQty,
+        unitType: item.unitType,
+        price: item.price,
+        costPrice: item.costPrice,
+      }));
+
+    const itemsToAdd = exchangeItems.map((item) => ({
+      product: item.product._id || item.product,
+      quantity: item.quantity,
+      unitType: item.unitType,
+      price: item.price,
+      costPrice: item.costPrice,
+    }));
+
+    if (itemsToReturn.length === 0 && itemsToAdd.length === 0) {
+      toast.error("Please select items to return or add items for exchange.");
+      return;
+    }
+
+    const totalReturnAmount = returnItems.reduce(
+      (sum, item) => sum + item.returnQty * item.price,
+      0
+    );
+    const totalNewAmount = exchangeItems.reduce(
+      (sum, item) => sum + item.quantity * item.price,
+      0
+    );
+    const netAmount = totalNewAmount - totalReturnAmount;
+
+    setReturnProcessing(true);
+    try {
+      const payload = {
+        originalSaleId: selectedReturnSale._id,
+        itemsToReturn,
+        itemsToAdd,
+        totalReturnAmount,
+        totalNewAmount,
+        netAmount,
+        paidAmount: netAmount, // Assuming full adjustment for now
+        paymentMethod: "cash",
+        remarks:
+          remarks || `Return/Exchange for ${selectedReturnSale.invoiceId}`,
+      };
+
+      await api.post("/sales/return", payload);
+      toast.success("Return/Exchange processed successfully!");
+      setShowReturnModal(false);
+      fetchSales(); // Refresh history
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to process return");
+    } finally {
+      setReturnProcessing(false);
+    }
+  };
+
   // Print A4 Format Invoice/Estimate
   const printA4Format = (
     sale: any,
@@ -581,7 +714,7 @@ export default function POSPage() {
 
     const WindowPrt = window.open("", "_blank", "width=900,height=900");
     if (!WindowPrt) {
-      alert("Please allow pop-ups to print the invoice");
+      toast.error("Please allow pop-ups to print the invoice");
       return;
     }
 
@@ -702,7 +835,7 @@ export default function POSPage() {
                 <tr>
                   <td>${item.product?.barcode || idx + 1}</td>
                   <td>${item.product?.name || "Item"}</td>
-                  <td class="text-center">${item.quantity}</td>
+                  <td class="text-center">${item.quantity} ${item.unitType === "piece" ? item.product?.pieceName || "Piece" : item.product?.unitName || "Box"}</td>
                   ${
                     !isChallan
                       ? `<td class="text-right">${item.price.toLocaleString()}</td>`
@@ -1158,8 +1291,8 @@ export default function POSPage() {
                                                       item.quantity
                                                     } ${
                                           item.unitType === "piece"
-                                            ? item.product?.pieceName || "Kg"
-                                            : item.product?.unitName || "Bore"
+                                            ? item.product?.pieceName || "Piece"
+                                            : item.product?.unitName || "Box"
                                         }</td>
                                                     ${
                                                       !isChallan
@@ -1565,7 +1698,7 @@ export default function POSPage() {
 
           {/* Right side: Cart & Checkout — same card/label style as other pages */}
           <div className="flex w-full flex-col shrink-0 overflow-hidden border-l border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950 lg:w-[420px]">
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 md:p-6">
+            <div className="flex flex-1 flex-col gap-4 overflow-hidden p-4 md:p-6">
               {/* Transaction details card */}
               <Card className="shrink-0 border-slate-200 dark:border-slate-800 dark:bg-slate-900">
                 <CardHeader className="pb-3">
@@ -1861,7 +1994,7 @@ export default function POSPage() {
               </Card>
 
               {/* Cart card */}
-              <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-slate-200 dark:border-slate-800 dark:bg-slate-900">
+              <Card className="flex min-h-0 shrink flex-col overflow-hidden border-slate-200 dark:border-slate-800 dark:bg-slate-900">
                 <CardHeader className="shrink-0 pb-3">
                   <CardTitle className="text-base font-bold text-slate-900 dark:text-white">
                     Cart
@@ -2143,13 +2276,24 @@ export default function POSPage() {
             </div>
 
             <Card className="overflow-hidden border-slate-200 dark:border-slate-800 dark:bg-slate-900">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">
-                  Historical Sales Data
-                </CardTitle>
-                <CardDescription className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Invoice ID, customer and amount
-                </CardDescription>
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="text-slate-900 dark:text-white">
+                    Historical Sales Data
+                  </CardTitle>
+                  <CardDescription className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Invoice ID, customer and amount
+                  </CardDescription>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search invoice, product, customer, ref..."
+                    className="h-9 w-full sm:w-64 pl-9"
+                    value={historySearchTerm}
+                    onChange={(e) => setHistorySearchTerm(e.target.value)}
+                  />
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -2159,6 +2303,7 @@ export default function POSPage() {
                         <th className="rounded-l-lg px-4 py-3">ID</th>
                         <th className="px-4 py-3">Date</th>
                         <th className="px-4 py-3">Customer</th>
+                        <th className="px-4 py-3">Products</th>
                         <th className="px-4 py-3">Amount</th>
                         <th className="px-4 py-3">Status</th>
                         <th className="rounded-r-lg px-4 py-3 text-right">
@@ -2167,17 +2312,34 @@ export default function POSPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {sales.length === 0 ? (
+                      {sales.filter(s => s.type !== "return" && s.type !== "exchange").length === 0 ? (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={7}
                             className="px-4 py-8 text-center italic text-slate-400"
                           >
-                            No sales found.
+                            No regular sales found.
                           </td>
                         </tr>
                       ) : (
-                        sales.map((sale) => (
+                        sales
+                          .filter(s => s.type !== "return" && s.type !== "exchange")
+                          .filter((sale) => {
+                            if (!historySearchTerm) return true;
+                            const term = historySearchTerm.toLowerCase();
+                            if (sale.invoiceId?.toLowerCase().includes(term)) return true;
+                            if (sale.customerName?.toLowerCase().includes(term)) return true;
+                            if (sale.customer?.name?.toLowerCase().includes(term)) return true;
+                            if (sale.referenceNo?.toLowerCase().includes(term)) return true;
+                            if (
+                              sale.items?.some((item: any) =>
+                                item.product?.name?.toLowerCase().includes(term)
+                              )
+                            )
+                              return true;
+                            return false;
+                          })
+                          .map((sale) => (
                           <tr
                             key={sale._id}
                             className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
@@ -2198,6 +2360,12 @@ export default function POSPage() {
                                 sale.customer?.name ||
                                 "Walk-in"}
                             </td>
+                            <td 
+                              className="px-4 py-3 text-xs text-slate-500 max-w-[200px] truncate"
+                              title={sale.items?.map((item: any) => item.product?.name).join(", ")}
+                            >
+                              {sale.items?.map((item: any) => item.product?.name).join(", ") || "—"}
+                            </td>
                             <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
                               Rs. {sale.totalAmount.toLocaleString()}
                             </td>
@@ -2217,6 +2385,15 @@ export default function POSPage() {
                             </td>
                             <td className="px-4 py-3 text-right">
                               <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Return / Exchange"
+                                  className="h-9 w-9 text-orange-500 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-orange-900/20 dark:hover:text-orange-400"
+                                  onClick={() => handleOpenReturn(sale)}
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
                                 {userRole === "admin" && (
                                   <Button
                                     variant="ghost"
@@ -2256,6 +2433,112 @@ export default function POSPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* NEW TABLE FOR RETURNS & EXCHANGES */}
+            <Card className="overflow-hidden border-orange-200 dark:border-orange-900/30 dark:bg-slate-900">
+              <CardHeader className="bg-orange-50/50 dark:bg-orange-900/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="text-orange-900 dark:text-orange-400 flex items-center gap-2">
+                    <RotateCcw className="h-5 w-5" />
+                    Return & Exchange History
+                  </CardTitle>
+                  <CardDescription className="text-xs font-bold uppercase tracking-wider text-orange-600/70 dark:text-orange-500/50">
+                    Inventory reversals and product swaps
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-orange-100/50 dark:bg-orange-900/20 text-orange-800 dark:text-orange-300 uppercase text-[10px] font-black">
+                      <tr>
+                        <th className="px-4 py-3">Return ID</th>
+                        <th className="px-4 py-3">Date</th>
+                        <th className="px-4 py-3">Customer</th>
+                        <th className="px-4 py-3">Items Returned/Added</th>
+                        <th className="px-4 py-3">Net Impact</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-orange-100/50 dark:divide-orange-900/20">
+                      {sales.filter(s => s.type === "return" || s.type === "exchange").length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            className="px-4 py-12 text-center italic text-slate-400"
+                          >
+                            No return or exchange records yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        sales
+                          .filter(s => s.type === "return" || s.type === "exchange")
+                          .map((sale) => (
+                            <tr key={sale._id} className="hover:bg-orange-50/30 dark:hover:bg-orange-900/5 transition-colors">
+                              <td className="px-4 py-4 font-mono font-bold text-orange-700 dark:text-orange-400">
+                                {sale.invoiceId}
+                              </td>
+                              <td className="px-4 py-4 text-slate-500 dark:text-slate-400">
+                                {formatDateTimeSafe(sale.createdAt)}
+                              </td>
+                              <td className="px-4 py-4 font-medium text-slate-900 dark:text-white">
+                                {sale.customerName || "Walk-in"}
+                              </td>
+                              <td className="px-4 py-4 text-xs">
+                                <div className="space-y-1">
+                                  {sale.items.map((it: any, i: number) => (
+                                    <div key={i} className="flex items-center gap-1">
+                                      <span className={cn(
+                                        "px-1 rounded-[4px] font-black uppercase text-[8px]",
+                                        it.quantity < 0 ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"
+                                      )}>
+                                        {it.quantity < 0 ? "RET" : "ADD"}
+                                      </span>
+                                      <span className="text-slate-600 dark:text-slate-300">
+                                        {Math.abs(it.quantity)} {it.unitType} {it.product?.name}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                              <td className={cn(
+                                "px-4 py-4 font-bold",
+                                sale.totalAmount < 0 ? "text-orange-600" : "text-blue-600"
+                              )}>
+                                Rs. {Math.abs(sale.totalAmount).toLocaleString()}
+                                {sale.totalAmount < 0 ? " (Refund)" : " (Payable)"}
+                              </td>
+                              <td className="px-4 py-4 text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-blue-500 hover:bg-blue-50"
+                                    onClick={() => handlePrint(sale)}
+                                  >
+                                    <Printer className="h-4 w-4" />
+                                  </Button>
+                                  {userRole === "admin" && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-red-400 hover:bg-red-50 hover:text-red-600"
+                                      onClick={() => handleVoid(sale._id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
           </div>
         </div>
       )}
@@ -2744,6 +3027,200 @@ export default function POSPage() {
                   {loading ? "Updating..." : "Commit Changes"}
                 </Button>
               </CardFooter>
+            </Card>
+          </div>
+        )}
+
+        {showReturnModal && selectedReturnSale && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <Card className="w-full max-w-4xl shadow-2xl border-none overflow-hidden rounded-3xl max-h-[90vh] flex flex-col">
+              <CardHeader className="bg-orange-600 text-white p-6 shrink-0 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 font-black tracking-tighter uppercase italic text-xl">
+                    <RotateCcw className="h-6 w-6" />
+                    Sale Return & Exchange
+                  </CardTitle>
+                  <CardDescription className="text-orange-100 font-medium">
+                    Invoice: {selectedReturnSale.invoiceId} | Customer: {selectedReturnSale.customerName || "Walk-in"}
+                  </CardDescription>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setShowReturnModal(false)} className="text-white hover:bg-orange-700">
+                  <X className="h-6 w-6" />
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0 overflow-hidden flex-1 flex flex-col md:flex-row">
+                {/* Left Side: Original Items to Return */}
+                <div className="flex-1 p-6 border-r border-slate-100 dark:border-slate-800 overflow-y-auto">
+                  <h3 className="text-sm font-black uppercase text-slate-400 mb-4 tracking-widest flex items-center gap-2">
+                    <History className="h-4 w-4" />
+                    Original Items
+                  </h3>
+                  <div className="space-y-3">
+                    {returnItems.map((item, idx) => (
+                      <div key={idx} className="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800/50 dark:border-slate-700">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <p className="font-bold text-sm text-slate-900 dark:text-white">{item.product?.name}</p>
+                            <p className="text-xs text-slate-500">
+                              Sold: {item.quantity} {item.unitType} @ Rs. {item.price}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Label className="text-[10px] font-bold uppercase text-slate-500">Return Qty:</Label>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg"
+                              onClick={() => updateReturnQty(idx, item.returnQty - 1)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <Input
+                              type="number"
+                              className="h-8 w-16 text-center font-bold"
+                              value={item.returnQty}
+                              onChange={(e) => updateReturnQty(idx, parseInt(e.target.value) || 0)}
+                            />
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg"
+                              onClick={() => updateReturnQty(idx, item.returnQty + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <p className="ml-auto font-bold text-orange-600 text-sm">
+                            - Rs. {(item.returnQty * item.price).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right Side: Exchange Items */}
+                <div className="flex-1 p-6 flex flex-col overflow-hidden bg-slate-50/50 dark:bg-slate-900/50">
+                  <h3 className="text-sm font-black uppercase text-slate-400 mb-4 tracking-widest flex items-center gap-2">
+                    <RefreshCcw className="h-4 w-4" />
+                    Exchange / New Items
+                  </h3>
+                  
+                  {/* Improved Product Search for Exchange */}
+                  <div className="relative mb-4">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      placeholder="Search new product (name or barcode)..."
+                      className="pl-9 h-10 rounded-xl"
+                      value={exchangeSearch}
+                      onChange={(e) => {
+                        const term = e.target.value;
+                        setExchangeSearch(term);
+                        if (term.length > 1) {
+                          const filtered = products.filter(p => 
+                            p.name.toLowerCase().includes(term.toLowerCase()) || 
+                            (p.barcode && p.barcode.toLowerCase().includes(term.toLowerCase()))
+                          ).slice(0, 5);
+                          setExchangeSearchResults(filtered);
+                        } else {
+                          setExchangeSearchResults([]);
+                        }
+                      }}
+                    />
+                    {exchangeSearchResults.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-[110] mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden">
+                        {exchangeSearchResults.map((prod) => (
+                          <button
+                            key={prod._id}
+                            className="w-full px-4 py-2 text-left hover:bg-blue-50 dark:hover:bg-slate-700 flex items-center justify-between border-b last:border-0 border-slate-100 dark:border-slate-700"
+                            onClick={() => {
+                              addToExchange(prod);
+                              setExchangeSearch("");
+                              setExchangeSearchResults([]);
+                            }}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-xs truncate">{prod.name}</p>
+                              <p className="text-[10px] text-slate-500">Code: {prod.barcode || 'N/A'}</p>
+                            </div>
+                            <div className="text-xs font-black text-blue-600">
+                              Rs. {prod.salePrice}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto space-y-3 mb-4">
+                    {exchangeItems.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-slate-400 border-2 border-dashed rounded-2xl p-8">
+                        <ShoppingCart className="h-8 w-8 mb-2 opacity-20" />
+                        <p className="text-xs font-bold uppercase tracking-tighter">No items added for exchange</p>
+                      </div>
+                    ) : (
+                      exchangeItems.map((item, idx) => (
+                        <div key={idx} className="p-3 border rounded-xl bg-white dark:bg-slate-800 shadow-sm border-slate-200 dark:border-slate-700">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <p className="font-bold text-sm text-slate-900 dark:text-white">{item.product?.name}</p>
+                              <p className="text-xs text-blue-600 font-bold">Rs. {item.price} per {item.unitType}</p>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => removeExchangeItem(idx)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateExchangeQty(idx, item.quantity - 1)}>
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="font-bold text-sm w-8 text-center">{item.quantity}</span>
+                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateExchangeQty(idx, item.quantity + 1)}>
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">
+                              Rs. {(item.quantity * item.price).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Summary Area */}
+                  <div className="mt-auto pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                    <div className="flex justify-between text-xs font-bold uppercase text-slate-500">
+                      <span>Total Return</span>
+                      <span className="text-orange-600">- Rs. {returnItems.reduce((sum, item) => sum + item.returnQty * item.price, 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-xs font-bold uppercase text-slate-500">
+                      <span>Total New Items</span>
+                      <span className="text-blue-600">+ Rs. {exchangeItems.reduce((sum, item) => sum + item.quantity * item.price, 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-800">
+                      <span className="text-sm font-black uppercase tracking-tighter">Net Balance</span>
+                      <span className={cn(
+                        "text-lg font-black",
+                        (exchangeItems.reduce((sum, item) => sum + item.quantity * item.price, 0) - returnItems.reduce((sum, item) => sum + item.returnQty * item.price, 0)) >= 0 
+                        ? "text-blue-600" : "text-orange-600"
+                      )}>
+                        Rs. {(exchangeItems.reduce((sum, item) => sum + item.quantity * item.price, 0) - returnItems.reduce((sum, item) => sum + item.returnQty * item.price, 0)).toLocaleString()}
+                      </span>
+                    </div>
+                    <Button 
+                      className="w-full h-12 mt-4 bg-orange-600 hover:bg-orange-700 text-white font-black uppercase tracking-widest rounded-xl shadow-lg"
+                      onClick={submitReturn}
+                      disabled={returnProcessing}
+                    >
+                      {returnProcessing ? "Processing..." : "Complete Return / Exchange"}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
           </div>
         )}

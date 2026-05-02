@@ -59,42 +59,40 @@ const menuItems = [
   { name: "Inventory", href: "/dashboard/reports", icon: BarChart3 },
   { name: "Purchases", href: "/dashboard/purchases", icon: CreditCard },
   { name: "Expenses", href: "/dashboard/expenses", icon: CreditCard },
-  { name: "Finance", href: "/dashboard/finance", icon: CreditCard },
+  // { name: "Finance", href: "/dashboard/finance", icon: CreditCard },
   { name: "Customers", href: "/dashboard/customers", icon: Users },
   {
     name: "Customer Contacts",
     href: "/dashboard/customer-contacts",
     icon: Contact,
   },
-  {
-    name: "Retailers",
-    href: "/dashboard/retailers",
-    icon: Building2,
-  },
-  {
-    name: "Employees",
-    href: "/dashboard/employees",
-    icon: UserCheck,
-    adminOnly: true,
-  },
-  {
-    name: "Attendance",
-    href: "/dashboard/attendance",
-    icon: Clock,
-    adminOnly: true,
-  },
+  // {
+  //   name: "Retailers",
+  //   href: "/dashboard/retailers",
+  //   icon: Building2,
+  // },
+  // {
+  //   name: "Employees",
+  //   href: "/dashboard/employees",
+  //   icon: UserCheck,
+  //   adminOnly: true,
+  // },
+  // {
+  //   name: "Attendance",
+  //   href: "/dashboard/attendance",
+  //   icon: Clock,
+  //   adminOnly: true,
+  // },
   {
     name: "Notifications",
     href: "/dashboard/notifications",
     icon: Bell,
-    adminOnly: true,
   },
-  { name: "Reports", href: "/dashboard/reports", icon: TrendingUp },
+  // { name: "Reports", href: "/dashboard/reports", icon: TrendingUp },
   {
     name: "Financial Reports",
     href: "/dashboard/financial-reports",
     icon: PieChart,
-    adminOnly: true,
   },
   { name: "Stores", href: "/dashboard/stores", icon: Store, adminOnly: true },
   {
@@ -103,12 +101,12 @@ const menuItems = [
     icon: BarChart3,
     adminOnly: true,
   },
-  {
-    name: "Warehouse/W.Inventory",
-    href: "/dashboard/warehouses",
-    icon: Warehouse,
-    adminOnly: true,
-  },
+  // {
+  //   name: "Warehouse/W.Inventory",
+  //   href: "/dashboard/warehouses",
+  //   icon: Warehouse,
+  //   adminOnly: true,
+  // },
   {
     name: "Users",
     href: "/dashboard/users",
@@ -150,14 +148,14 @@ export default function DashboardLayout({
       const res = await api.get("/products");
       const products = res.data || [];
 
-      // Low stock: less than 10 items (but greater than 0)
+      // Low stock: less than the product's critical threshold (but greater than 0)
       const lowStock = products.filter(
-        (p: any) => (p.totalStock || 0) > 0 && (p.totalStock || 0) < 10,
+        (p: any) =>
+          (p.totalStock || 0) > 0 &&
+          (p.totalStock || 0) < (p.criticalThreshold || 10),
       );
-      // High stock: more than 100 items
-      const highStock = products.filter((p: any) => (p.totalStock || 0) > 100);
 
-      setStockNotifications({ lowStock, highStock });
+      setStockNotifications({ lowStock, highStock: [] });
     } catch (error) {
       console.error("Failed to fetch stock notifications", error);
     } finally {
@@ -283,11 +281,11 @@ export default function DashboardLayout({
               <div className="space-y-0.5">
                 {menuItems
                   .filter((item) => {
-                    if (isAdmin) return !item.adminOnly || isAdmin;
+                    if (item.name === "Settings") return false;
                     if (isSalesman) return item.salesman;
-                    return !item.adminOnly;
+                    if (item.adminOnly) return false;
+                    return true;
                   })
-                  .slice(0, isAdmin ? 11 : isSalesman ? 4 : 11)
                   .map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;
@@ -447,11 +445,14 @@ export default function DashboardLayout({
                   className="relative text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
                   <Bell className="h-5 w-5" />
-                  {(stockNotifications.lowStock.length + stockNotifications.highStock.length) > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
-                      {stockNotifications.lowStock.length + stockNotifications.highStock.length}
-                    </span>
-                  )}
+                  {stockNotifications.lowStock.length +
+                    stockNotifications.highStock.length >
+                    0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+                        {stockNotifications.lowStock.length +
+                          stockNotifications.highStock.length}
+                      </span>
+                    )}
                 </Button>
               </Link>
 
@@ -469,10 +470,16 @@ export default function DashboardLayout({
             </div>
           </header>
         )}
-        <div className={cn(
-          "flex-1 min-h-0 flex flex-col",
-          pathname === "/dashboard/sales" ? "overflow-hidden" : "overflow-y-auto"
-        )}>{children}</div>
+        <div
+          className={cn(
+            "flex-1 min-h-0 flex flex-col",
+            pathname === "/dashboard/sales"
+              ? "overflow-hidden"
+              : "overflow-y-auto",
+          )}
+        >
+          {children}
+        </div>
       </main>
       <Toaster position="top-right" richColors closeButton />
     </div>

@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Plus, Barcode, Trash2, Edit, Package } from "lucide-react";
+import { Plus, Barcode, Trash2, Edit, Package, Search, X } from "lucide-react";
 import api from "@/lib/api";
 
 export default function ProductPage() {
@@ -34,11 +34,13 @@ export default function ProductPage() {
     pieceSalePrice: "0",
     unitName: "Box",
     pieceName: "Piece",
-    initialStockUnit: "box",
+    initialStockUnit: "piece",
+    criticalThreshold: "10",
   });
   const [file, setFile] = useState<File | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchData = async () => {
     try {
@@ -123,7 +125,8 @@ export default function ProductPage() {
       pieceSalePrice: (p.pieceSalePrice || 0).toString(),
       unitName: p.unitName || "Box",
       pieceName: p.pieceName || "Piece",
-      initialStockUnit: p.initialStockUnit || "box",
+      initialStockUnit: p.initialStockUnit || "piece",
+      criticalThreshold: (p.criticalThreshold || 10).toString(),
     });
     setShowAdd(true);
   };
@@ -147,7 +150,8 @@ export default function ProductPage() {
       pieceSalePrice: "0",
       unitName: "Box",
       pieceName: "Piece",
-      initialStockUnit: "box",
+      initialStockUnit: "piece",
+      criticalThreshold: "10",
     });
     setFile(null);
   };
@@ -389,6 +393,23 @@ export default function ProductPage() {
                   </select>
                 </div>
               )}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="criticalThreshold"
+                  className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                >
+                  Critical Threshold
+                </Label>
+                <Input
+                  id="criticalThreshold"
+                  type="number"
+                  value={formData.criticalThreshold}
+                  onChange={handleInputChange}
+                  className="dark:bg-slate-800/50 dark:border-slate-700"
+                  placeholder="Alert when stock falls below this level"
+                  required
+                />
+              </div>
               <div className="flex items-center space-x-2 md:col-span-3 py-2 border-t border-slate-100 dark:border-slate-800 mt-2">
                 <input
                   type="checkbox"
@@ -531,12 +552,35 @@ export default function ProductPage() {
       {/* Products list — Card wrapper like Dashboard/Reports */}
       <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-900">
         <CardHeader>
-          <CardTitle className="text-slate-900 dark:text-white">
-            Products
-          </CardTitle>
-          <CardDescription className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Your inventory products. Edit or delete from each card.
-          </CardDescription>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle className="text-slate-900 dark:text-white">
+                Products
+              </CardTitle>
+              <CardDescription className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Your inventory products. Edit or delete from each card.
+              </CardDescription>
+            </div>
+            <div className="w-full md:w-80 relative">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  placeholder="Search by name or barcode..."
+                  className="pl-10 pr-10 dark:bg-slate-800/50 dark:border-slate-700"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {products.length === 0 ? (
@@ -556,97 +600,128 @@ export default function ProductPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {products.map((p) => (
-                <div
-                  key={p._id}
-                  className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
-                >
-                  {/* Image area — unified height */}
-                  {p.image ? (
-                    <img
-                      src={`http://localhost:5000${p.image}`}
-                      alt={p.name}
-                      className="h-32 w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-32 items-center justify-center border-b border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50">
-                      <Package className="h-10 w-10 text-slate-300 dark:text-slate-600" />
-                    </div>
-                  )}
-                  <div className="p-3">
-                    {/* Name + stock badge + actions — same on every card */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-bold text-slate-900 dark:text-white">
-                          {p.name}
-                        </h3>
-                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">
-                          {p.category || p.description || "—"}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
-                        <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                          {p.hasPieces ? (
-                            <>
-                              {Math.floor(p.totalStock / (p.piecesPerBox || 1))}{" "}
-                              {p.unitName || "Box"}
-                              {Math.floor(
-                                p.totalStock / (p.piecesPerBox || 1),
-                              ) !== 0
-                                ? "s"
-                                : ""}
-                              {p.totalStock % (p.piecesPerBox || 1) > 0 &&
-                                `, ${p.totalStock % (p.piecesPerBox || 1)} ${
-                                  p.pieceName || "Piece"
-                                }`}
-                            </>
-                          ) : (
-                            <>{p.totalStock} units</>
-                          )}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
-                          onClick={() => handleEdit(p)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
-                          onClick={() => handleDelete(p._id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    {/* Price row */}
-                    <div className="mt-2 flex items-baseline justify-between gap-2">
-                      <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
-                        Rs. {Number(p.salePrice).toLocaleString()}
-                      </span>
-                      <span className="text-xs text-slate-400 line-through dark:text-slate-500">
-                        Rs. {Number(p.costPrice).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="mt-1.5 truncate text-xs font-mono text-slate-500 dark:text-slate-400">
-                      Barcode: {p.barcode || "N/A"}
-                    </p>
-                    {p.warehouses && p.warehouses.length > 0 && (
-                      <p className="mt-1 text-xs text-blue-600 dark:text-blue-400 font-medium">
-                        📦{" "}
-                        {p.warehouses
-                          .map((w: any) => w.warehouse?.name || "Unknown")
-                          .join(", ")}
+            <>
+              {(() => {
+                const filteredProducts = products.filter(
+                  (p) =>
+                    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (p.barcode &&
+                      p.barcode
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase())),
+                );
+
+                if (filteredProducts.length === 0 && searchTerm) {
+                  return (
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 py-12 dark:border-slate-700">
+                      <Search className="mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
+                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                        No products found.
                       </p>
-                    )}
+                      <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                        Try searching with a different name or barcode.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {filteredProducts.map((p) => (
+                      <div
+                        key={p._id}
+                        className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                      >
+                        {/* Image area — unified height */}
+                        {p.image ? (
+                          <img
+                            src={`http://localhost:5000${p.image}`}
+                            alt={p.name}
+                            className="h-32 w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-32 items-center justify-center border-b border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50">
+                            <Package className="h-10 w-10 text-slate-300 dark:text-slate-600" />
+                          </div>
+                        )}
+                        <div className="p-3">
+                          {/* Name + stock badge + actions — same on every card */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="truncate text-sm font-bold text-slate-900 dark:text-white">
+                                {p.name}
+                              </h3>
+                              <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                                {p.category || p.description || "—"}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 flex-col items-end gap-1">
+                              <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                                {p.hasPieces ? (
+                                  <>
+                                    {Math.floor(
+                                      p.totalStock / (p.piecesPerBox || 1),
+                                    )}{" "}
+                                    {p.unitName || "Box"}
+                                    {Math.floor(
+                                      p.totalStock / (p.piecesPerBox || 1),
+                                    ) !== 0
+                                      ? "s"
+                                      : ""}
+                                    {p.totalStock % (p.piecesPerBox || 1) > 0 &&
+                                      `, ${
+                                        p.totalStock % (p.piecesPerBox || 1)
+                                      } ${p.pieceName || "Piece"}`}
+                                  </>
+                                ) : (
+                                  <>{p.totalStock} units</>
+                                )}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                                onClick={() => handleEdit(p)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                                onClick={() => handleDelete(p._id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          {/* Price row */}
+                          <div className="mt-2 flex items-baseline justify-between gap-2">
+                            <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                              Rs. {Number(p.salePrice).toLocaleString()}
+                            </span>
+                            <span className="text-xs text-slate-400 line-through dark:text-slate-500">
+                              Rs. {Number(p.costPrice).toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="mt-1.5 truncate text-xs font-mono text-slate-500 dark:text-slate-400">
+                            Barcode: {p.barcode || "N/A"}
+                          </p>
+                          {p.warehouses && p.warehouses.length > 0 && (
+                            <p className="mt-1 text-xs text-blue-600 dark:text-blue-400 font-medium">
+                              📦{" "}
+                              {p.warehouses
+                                .map((w: any) => w.warehouse?.name || "Unknown")
+                                .join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
+                );
+              })()}
+            </>
           )}
         </CardContent>
       </Card>

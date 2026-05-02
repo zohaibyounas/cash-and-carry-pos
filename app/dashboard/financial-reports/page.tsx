@@ -22,7 +22,7 @@ import {
   Wallet,
 } from "lucide-react";
 import api from "@/lib/api";
-import { formatDateSafe } from "@/lib/utils";
+import { formatDateSafe, formatDateTimeSafe } from "@/lib/utils";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -57,7 +57,9 @@ export default function FinancialReportsPage() {
       if (startDate) params.append("startDate", startDate);
       if (endDate) params.append("endDate", endDate);
       // Ensure backend route matches registration
-      const res = await api.get(`/analytics/financial-report?${params.toString()}`);
+      const res = await api.get(
+        `/analytics/financial-report?${params.toString()}`,
+      );
       setReportData(res.data);
     } catch (error) {
       console.error("Failed to fetch report", error);
@@ -82,30 +84,50 @@ export default function FinancialReportsPage() {
     doc.text("Financial Summary Report", 14, 15);
     doc.setFontSize(10);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
-    doc.text(`Report Period: ${startDate || "Initial"} to ${endDate || "Present"}`, 14, 28);
+    doc.text(
+      `Report Period: ${startDate || "Initial"} to ${endDate || "Present"}`,
+      14,
+      28,
+    );
 
-    const tableData = reportData.map((day) => [
-      formatDateSafe(day.date),
-      `Rs. ${(day.cashSales || 0).toLocaleString()}`,
-      `Rs. ${(day.cardSales || 0).toLocaleString()}`,
-      `Rs. ${(day.bankTransferSales || 0).toLocaleString()}`,
-      `Rs. ${day.sales.toLocaleString()}`,
-      `Rs. ${day.purchases.toLocaleString()}`,
-      `Rs. ${day.expenses.toLocaleString()}`,
-      `Rs. ${day.profit.toLocaleString()}`,
-      `Rs. ${day.netProfit.toLocaleString()}`,
+    const tableData = reportData.map((item) => [
+      formatDateTimeSafe(item.date),
+      (item.productNames || []).join(", ") || "-",
+      `Rs. ${(item.cashSales || 0).toLocaleString()}`,
+      `Rs. ${(item.cardSales || 0).toLocaleString()}`,
+      `Rs. ${(item.bankTransferSales || 0).toLocaleString()}`,
+      `Rs. ${item.sales.toLocaleString()}`,
+      `Rs. ${item.purchases.toLocaleString()}`,
+      `Rs. ${item.expenses.toLocaleString()}`,
+      `Rs. ${item.profit.toLocaleString()}`,
+      `Rs. ${item.netProfit.toLocaleString()}`,
     ]);
 
     autoTable(doc, {
       startY: 35,
-      head: [["Date", "Cash", "Card", "Bank", "Total Sales", "Purchases", "Expenses", "Gross Profit", "Net Profit"]],
+      head: [
+        [
+          "Date",
+          "Products Sold",
+          "Cash",
+          "Card",
+          "Bank",
+          "Total Sales",
+          "Purchases",
+          "Expenses",
+          "Gross Profit",
+          "Net Profit",
+        ],
+      ],
       body: tableData,
-      theme: 'striped',
+      theme: "striped",
       headStyles: { fillColor: [37, 99, 235] },
       styles: { fontSize: 8 },
     });
 
-    doc.save(`financial_summary_${startDate || 'full'}_to_${endDate || 'full'}.pdf`);
+    doc.save(
+      `financial_summary_${startDate || "full"}_to_${endDate || "full"}.pdf`,
+    );
     toast.success("PDF Downloaded successfully");
   };
 
@@ -121,7 +143,16 @@ export default function FinancialReportsPage() {
       profit: acc.profit + (curr.profit || 0),
       netProfit: acc.netProfit + (curr.netProfit || 0),
     }),
-    { sales: 0, cash: 0, card: 0, bankTransfer: 0, purchases: 0, expenses: 0, profit: 0, netProfit: 0 }
+    {
+      sales: 0,
+      cash: 0,
+      card: 0,
+      bankTransfer: 0,
+      purchases: 0,
+      expenses: 0,
+      profit: 0,
+      netProfit: 0,
+    },
   );
 
   return (
@@ -151,9 +182,14 @@ export default function FinancialReportsPage() {
       {/* Filters */}
       <Card className="w-full border-slate-200 dark:border-slate-800 dark:bg-slate-900 print:hidden">
         <CardContent className="pt-4">
-          <form onSubmit={handleFilter} className="flex flex-wrap items-end gap-3">
+          <form
+            onSubmit={handleFilter}
+            className="flex flex-wrap items-end gap-3"
+          >
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-500">Start Date</Label>
+              <Label className="text-xs font-bold uppercase text-slate-500">
+                Start Date
+              </Label>
               <Input
                 type="date"
                 value={startDate}
@@ -162,7 +198,9 @@ export default function FinancialReportsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-500">End Date</Label>
+              <Label className="text-xs font-bold uppercase text-slate-500">
+                End Date
+              </Label>
               <Input
                 type="date"
                 value={endDate}
@@ -170,7 +208,12 @@ export default function FinancialReportsPage() {
                 className="h-9 w-40 dark:bg-slate-800/50"
               />
             </div>
-            <Button type="submit" size="sm" disabled={loading} className="h-9 gap-2">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={loading}
+              className="h-9 gap-2"
+            >
               <Search className="h-4 w-4" /> Apply Filters
             </Button>
             <Button
@@ -195,10 +238,14 @@ export default function FinancialReportsPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
         <Card className="border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-900/20">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold uppercase text-blue-600 dark:text-blue-400">Total Sales</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase text-blue-600 dark:text-blue-400">
+              Total Sales
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-blue-700 dark:text-blue-300">Rs. {totals.sales.toLocaleString()}</div>
+            <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
+              Rs. {totals.sales.toLocaleString()}
+            </div>
             <div className="mt-1 flex flex-col text-[10px] text-slate-500 font-medium">
               <span>Cash: Rs. {totals.cash.toLocaleString()}</span>
               <span>Card: Rs. {totals.card.toLocaleString()}</span>
@@ -208,34 +255,50 @@ export default function FinancialReportsPage() {
         </Card>
         <Card className="border-rose-100 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-900/20">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold uppercase text-rose-600 dark:text-rose-400">Total Purchases</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase text-rose-600 dark:text-rose-400">
+              Total Purchases
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-rose-700 dark:text-rose-300">Rs. {totals.purchases.toLocaleString()}</div>
+            <div className="text-xl font-bold text-rose-700 dark:text-rose-300">
+              Rs. {totals.purchases.toLocaleString()}
+            </div>
           </CardContent>
         </Card>
         <Card className="border-amber-100 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-900/20">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold uppercase text-amber-600 dark:text-amber-400">Total Expenses</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase text-amber-600 dark:text-amber-400">
+              Total Expenses
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-amber-700 dark:text-amber-300">Rs. {totals.expenses.toLocaleString()}</div>
+            <div className="text-xl font-bold text-amber-700 dark:text-amber-300">
+              Rs. {totals.expenses.toLocaleString()}
+            </div>
           </CardContent>
         </Card>
         <Card className="border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-900/20">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold uppercase text-emerald-600 dark:text-emerald-400">Gross Profit</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase text-emerald-600 dark:text-emerald-400">
+              Gross Profit
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">Rs. {totals.profit.toLocaleString()}</div>
+            <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
+              Rs. {totals.profit.toLocaleString()}
+            </div>
           </CardContent>
         </Card>
         <Card className="border-emerald-100 dark:border-emerald-900/50 bg-emerald-600 dark:bg-emerald-600 text-white shadow-lg">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-bold uppercase text-emerald-100">Net Profit</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase text-emerald-100">
+              Net Profit
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold">Rs. {totals.netProfit.toLocaleString()}</div>
+            <div className="text-xl font-bold">
+              Rs. {totals.netProfit.toLocaleString()}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -252,6 +315,7 @@ export default function FinancialReportsPage() {
               <thead className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-xs font-bold tabular-nums">
                 <tr>
                   <th className="px-4 py-3 rounded-l-lg">Date</th>
+                  <th className="px-4 py-3">Products Sold</th>
                   <th className="px-4 py-3 text-right">Cash</th>
                   <th className="px-4 py-3 text-right">Card</th>
                   <th className="px-4 py-3 text-right">Bank</th>
@@ -259,46 +323,79 @@ export default function FinancialReportsPage() {
                   <th className="px-4 py-3 text-right">Purchases</th>
                   <th className="px-4 py-3 text-right">Expenses</th>
                   <th className="px-4 py-3 text-right">Gross Profit</th>
-                  <th className="px-4 py-3 text-right rounded-r-lg">Net Profit</th>
+                  <th className="px-4 py-3 text-right rounded-r-lg">
+                    Net Profit
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {reportData.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                    <td
+                      colSpan={10}
+                      className="px-4 py-8 text-center text-slate-400"
+                    >
                       No records found for the selected range.
                     </td>
                   </tr>
                 ) : (
-                  reportData.map((day) => (
-                    <tr key={day.date} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors tabular-nums">
-                      <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
-                        {formatDateSafe(day.date)}
+                  reportData.map((item, index) => (
+                    <tr
+                      key={item._id || index}
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors tabular-nums"
+                    >
+                      <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                        {formatDateTimeSafe(item.date)}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300 text-sm font-medium">
+                        {(item.productNames || []).join(", ") || "-"}
                       </td>
                       <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 font-medium">
-                        Rs. {(day.cashSales || 0).toLocaleString()}
+                        Rs. {(item.cashSales || 0).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right text-blue-600 dark:text-blue-400 font-medium">
-                        Rs. {(day.cardSales || 0).toLocaleString()}
+                        Rs. {(item.cardSales || 0).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right text-purple-600 dark:text-purple-400 font-medium">
-                        Rs. {(day.bankTransferSales || 0).toLocaleString()}
+                        Rs. {(item.bankTransferSales || 0).toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-900 dark:text-white font-bold">
-                        Rs. {day.sales.toLocaleString()}
+                      <td className="px-4 py-3 text-right">
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          Rs. {item.sales.toLocaleString()}
+                        </div>
+                        {(item.returns !== 0 || item.exchanges !== 0) && (
+                          <div className="flex flex-col text-[10px] items-end mt-1">
+                            {item.returns !== 0 && (
+                              <span className="text-orange-600 font-medium">
+                                Ret: Rs. {item.returns.toLocaleString()}
+                              </span>
+                            )}
+                            {item.exchanges !== 0 && (
+                              <span className="text-blue-600 font-medium">
+                                Exc: Rs. {item.exchanges.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right text-rose-500 font-medium">
-                        Rs. {day.purchases.toLocaleString()}
+                        Rs. {item.purchases.toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right text-amber-600 font-medium">
-                        Rs. {day.expenses.toLocaleString()}
+                        Rs. {item.expenses.toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400 font-bold">
-                        Rs. {day.profit.toLocaleString()}
+                        Rs. {item.profit.toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right font-black">
-                        <span className={day.netProfit >= 0 ? "text-emerald-600" : "text-rose-600"}>
-                          Rs. {day.netProfit.toLocaleString()}
+                        <span
+                          className={
+                            item.netProfit >= 0
+                              ? "text-emerald-600"
+                              : "text-rose-600"
+                          }
+                        >
+                          Rs. {item.netProfit.toLocaleString()}
                         </span>
                       </td>
                     </tr>
